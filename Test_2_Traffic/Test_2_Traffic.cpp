@@ -7,12 +7,10 @@
 #include <thread>
 #include <queue>
 #include <algorithm>
-#include <shared_mutex>
 
 
 #pragma warning(disable : 4996) 
 
-std::shared_mutex mtx;
 std::mutex m;
 int indexSameTime1 = 0;
 int indexSameTime2 = 0;
@@ -23,7 +21,7 @@ void carArrived(int carId, int direction)
 	std::cout << "Car " << carId << " passed in direction " << direction << std::endl;
 }
 
-void MyFunc(std::queue<int>& cars, std::vector<int>& directions, std::vector<int>& arriveTimes, std::queue<int>& x)
+void MyFunc(std::queue<int>& cars, std::vector<int>& directions, std::vector<int>& arriveTimes)
 {
 
 	int tmp = arriveTimes.size();
@@ -70,9 +68,8 @@ void MyFunc(std::queue<int>& cars, std::vector<int>& directions, std::vector<int
 				{
 					carArrived(cars.front(), direction);
 					cars.pop();
-					/*x.pop();*/
+					
 				}
-				/*tmp = x.size();*/
 				indexSameTime1 = 0;
 			}
 		}
@@ -91,10 +88,7 @@ int main()
 	std::vector<int> arriveTimes = { 10,20,30,40,40 };
 
 	std::queue<int> q;
-	std::queue<int> p1;
-	std::queue<int> p2;
-	std::queue<int> p3;
-	p3.push(1);
+
 	for (int i = 0; i < cars.size(); i++)
 	{
 		q.push(cars[i]);
@@ -147,25 +141,39 @@ int main()
 		}
 	}
 
-	for (int i = 0; i < arriveTime_1.size(); i ++)
+	std::vector<int> arriveTime_1_1;
+	std::vector<int> arriveTime_2_2;
+
+	for (int i =0;i < arriveTime_1.size() - 1;i++)
 	{
-		p1.push(arriveTime_1[i]);
+
+		if (arriveTime_1[i] == arriveTime_1[i+1] )
+		{
+			arriveTime_1_1.push_back(arriveTime_1[i]);
+			arriveTime_1.erase(arriveTime_1.begin() + i);
+		}
+		
+	}
+	for (int i = 0; i < arriveTime_2.size() - 1; i++)
+	{
+
+		if (arriveTime_2[i] == arriveTime_2[i + 1])
+		{
+			arriveTime_2_2.push_back(arriveTime_2[i]);
+			arriveTime_2.erase(arriveTime_1.begin() + i);
+		}
+
 	}
 
-	for (int i = 0; i < arriveTime_2.size(); i++)
-	{
-		p2.push(arriveTime_2[i]);
-	}
+	threads.emplace_back(MyFunc, std::ref(q), std::ref(directions), std::ref(arriveTime_1)); // direction - 1
+	threads.emplace_back(MyFunc, std::ref(q), std::ref(directions), std::ref(arriveTime_1_1)); // direction - 1
 
-	threads.emplace_back(MyFunc, std::ref(q), std::ref(directions), std::ref(arriveTime_1), std::ref(p1)); // direction - 1
-	//threads.emplace_back(MyFunc, std::ref(q), std::ref(directions), std::ref(arriveTime_1), std::ref(p1)); // direction - 1
+	threads.emplace_back(MyFunc, std::ref(q), std::ref(directions), std::ref(arriveTime_2)); // direction - 2
+	threads.emplace_back(MyFunc, std::ref(q), std::ref(directions), std::ref(arriveTime_2_2)); // direction - 2
 
-	threads.emplace_back(MyFunc, std::ref(q), std::ref(directions), std::ref(arriveTime_2),std::ref(p2)); // direction - 2
-	//threads.emplace_back(MyFunc, std::ref(q), std::ref(directions), std::ref(arriveTime_2),std::ref(p2)); // direction - 2
+	threads.emplace_back(MyFunc, std::ref(q), std::ref(directions), std::ref(arriveTime_3)); // direction - 3		 
 
-	threads.emplace_back(MyFunc, std::ref(q), std::ref(directions), std::ref(arriveTime_3), std::ref(p3)); // direction - 3		 // p3 not used
-
-	threads.emplace_back(MyFunc, std::ref(q), std::ref(directions), std::ref(arriveTime_4), std::ref(p3)); // direction - 4		 // p3 not used
+	threads.emplace_back(MyFunc, std::ref(q), std::ref(directions), std::ref(arriveTime_4)); // direction - 4		 
 
 
 
